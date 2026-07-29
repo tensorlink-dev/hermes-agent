@@ -1,0 +1,60 @@
+# DRAFT catalog entry for Aion — staged in the tensorlink-dev fork ahead of
+# an upstream PR to NousResearch/hermes-agent. Presence in this directory
+# upstream = Nous approval, merged via PR review.
+#
+# Before opening the upstream PR:
+#   1. Replace install.ref with a full commit SHA from TensorLink-AI/Aion
+#      that is at least 2 weeks old at pin time (catalog dependency policy;
+#      branches and tags can be moved, SHAs cannot).
+#   2. Re-verify the bootstrap and post-install check against that pin.
+#
+# Schema version 1.
+manifest_version: 1
+
+name: aion
+description: Evidence-backed local forecasting — backtested against baselines, honest abstention, evidence-linked artifacts (stdio, fully local).
+source: https://github.com/TensorLink-AI/Aion
+
+# Maps 1:1 to the `mcp_servers.aion` block `_save_mcp_server()` writes into
+# ~/.hermes/config.yaml.
+transport:
+  type: stdio
+  command: "${INSTALL_DIR}/.venv/bin/aion"
+  args:
+    - "mcp"
+    - "serve"
+
+install:
+  type: git
+  url: https://github.com/TensorLink-AI/Aion.git
+  # TODO(upstream PR): pin a full commit SHA >= 2 weeks old. Left as a
+  # placeholder while this entry is staged in the fork.
+  ref: REPLACE_WITH_PINNED_COMMIT_SHA
+  bootstrap:
+    - "python3 -m venv .venv"
+    - ".venv/bin/pip install ."
+
+# Aion is local-first: no account, no API key, no network calls.
+auth:
+  type: none
+
+# All three tools are read/compute-only against user-supplied local files;
+# forecast writes only immutable artifact directories under the working
+# directory (or an explicit output_dir argument). Nothing is pruned.
+tools:
+  default_enabled:
+    - aion_capabilities
+    - aion_inspect
+    - aion_forecast
+
+post_install: |
+  Aion runs entirely locally: no account, no API key, no uploads. Verify the
+  install with `${INSTALL_DIR}/.venv/bin/aion capabilities`.
+
+  Safe-use notes for agents: Aion is authoritative for all numbers. Preserve
+  each series' support status verbatim — `unsupported` is an abstention, not
+  a low-confidence forecast — and read forecast values from the artifact
+  directory (forecast.csv / summary.md) rather than paraphrasing them.
+  The optional evidence-gated context workflow (`aion context prompt` /
+  `aion context validate`) and the fuller Hermes plugin live in the source
+  repository.
