@@ -301,7 +301,10 @@ def test_requirements_build_installs_offline_markers_and_seals_only_build_pth(tm
     ))
     assert result == ["1.0", "1.0", sys.base_prefix, True]
     assert executable.parent.parent == out
-    assert bool(list(out.rglob("_virtualenv.pth"))) is not sealed
+    # uv 0.13 no longer creates the legacy shim; sealed builds must remove it
+    # when an older tool does create it. Successful imports above cover usability.
+    if sealed:
+        assert not list(out.rglob("_virtualenv.pth"))
     assert not poison.exists()
     assert not Path(build_tools["HERMES_HOME"]).exists()
     assert dict(os.environ) == before

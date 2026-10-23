@@ -155,7 +155,10 @@ def test_public_build_installs_all_extras_at_explicit_destination(installable_pr
     assert executable.parent.parent == tmp_path / "native environment"
     assert not (tmp_path / "wrong-environment").exists()
     assert "root_app" not in sys.modules
-    assert (site / "_virtualenv.pth").exists() is not sealed
+    # Newer uv omits this implementation shim even for unsealed environments.
+    # The security contract remains that sealed environments cannot retain it.
+    if sealed:
+        assert not (site / "_virtualenv.pth").exists()
     assert (site / "construction_root.pth").is_file(), "load-bearing .pth must survive sealing"
     assert (source / "uv.lock").read_bytes() == locked
     assert dict(os.environ) == before
